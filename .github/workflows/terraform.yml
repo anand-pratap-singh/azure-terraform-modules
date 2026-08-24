@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   terraform:
-    name: Terraform Validate and Plan
+    name: Terraform Validate, Plan and Infracost
     runs-on: ubuntu-latest
 
     defaults:
@@ -22,17 +22,18 @@ jobs:
         working-directory: parent_module
 
     steps:
-      # 1. Checkout repository
+
+      # 1. Checkout Repository
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Install Terraform
+      # 2. Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.8
 
-      # 3. Login to Azure using App Registration
+      # 3. Azure Login
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -46,7 +47,7 @@ jobs:
 
       # 4. Terraform Format Check
       - name: Terraform Format Check
-        run: terraform fmt -recursive
+        run: terraform fmt -check -recursive
 
       # 5. Terraform Init
       - name: Terraform Init
@@ -58,17 +59,18 @@ jobs:
 
       # 7. Terraform Plan
       - name: Terraform Plan
-        run: terraform plan -var-file="terraform.tfvars"
-        
-      # 8. Setup Infracost
+        run: terraform plan -var-file="terraform.tfvars" -out=tfplan
+
+      # 8. Convert Terraform Plan to JSON
+      - name: Terraform Plan JSON
+        run: terraform show -json tfplan > plan.json
+
+      # 9. Setup Infracost
       - name: Setup Infracost
         uses: infracost/actions/setup@v3
         with:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
 
-      # 9. Run Infracost Cost Scan new
-      - name: Infracost Cost Estimate
-        run: |
-          infracost breakdown \
-            --path=. \
-            --terraform-var-file=terraform.tfvars
+      # 10. Infracost Scan
+      - name: Infracost Cost Scan
+        run: infracost scan plan.json
