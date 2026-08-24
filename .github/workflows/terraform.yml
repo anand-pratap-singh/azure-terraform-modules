@@ -98,7 +98,7 @@ jobs:
 
 
   # ==========================================
-  # JOB 3 - CREATE PULL REQUEST
+  # JOB 3 - CREATE PULL REQUEST NOTIFICATION
   # ==========================================
   create-pr:
     name: Create Pull Request
