@@ -99,5 +99,5 @@ jobs:
       - name: Run Infracost Cost Estimate
         run: |
          infracost breakdown \
-           --path=parent_module/plan.json
+           --path=parent_module/plan.json \
            --format=table
