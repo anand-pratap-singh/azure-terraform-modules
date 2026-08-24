@@ -102,34 +102,26 @@ jobs:
            --path=parent_module/plan.json \
            --format=table
 
-# ==========================================
-# JOB 3 - PULL REQUEST
-# ==========================================
+  # ==========================================
+  # JOB 3 - PULL REQUEST
+  # ==========================================
 
-create-pr:
-  name: Create Pull Request
-  runs-on: ubuntu-latest
-  needs: infracost
+  create-pr:
+    name: Create Pull Request
+    runs-on: ubuntu-latest
+    needs: infracost
 
-  # PR sirf feature branch push ke baad create ho
-  if: github.event_name == 'push' && github.ref_name == 'feature/new-branch'
+    permissions:
+      contents: read
+      pull-requests: write
 
-  permissions:
-    contents: read
-    pull-requests: write
-
-  steps:
-
-    # Repository checkout is required
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-
-    - name: Create Pull Request
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        gh pr create \
-          --base main \
-          --head feature/new-branch \
-          --title "Merge feature/new-branch into main" \
-          --body "Terraform validation, plan, and Infracost checks completed successfully."
+    steps:
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr create \
+            --base main \
+            --head feature/new-branch \
+            --title "Merge feature/new-branch into main" \
+            --body "Terraform validation, plan, and Infracost checks completed successfully."
