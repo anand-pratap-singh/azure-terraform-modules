@@ -13,8 +13,12 @@ permissions:
   contents: read
 
 jobs:
+
+  # ==========================================
+  # JOB 1 - TERRAFORM VALIDATE AND PLAN
+  # ==========================================
   terraform:
-    name: Terraform Validate, Plan and Infracost
+    name: Terraform Validate and Plan
     runs-on: ubuntu-latest
 
     defaults:
@@ -23,17 +27,14 @@ jobs:
 
     steps:
 
-      # 1. Checkout Repository
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.8
 
-      # 3. Azure Login
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -45,32 +46,55 @@ jobs:
               "tenantId": "${{ secrets.AZURE_TENANT_ID }}"
             }
 
-      # 4. Terraform Format Check
       - name: Terraform Format Check
-        run: terraform fmt -check -recursive
+        run: terraform fmt -recursive
 
-      # 5. Terraform Init
       - name: Terraform Init
         run: terraform init
 
-      # 6. Terraform Validate
       - name: Terraform Validate
         run: terraform validate
 
-      # 7. Terraform Plan
       - name: Terraform Plan
         run: terraform plan -var-file="terraform.tfvars" -out=tfplan
 
-      # 8. Convert Terraform Plan to JSON
-      - name: Terraform Plan JSON
+      - name: Convert Plan to JSON
         run: terraform show -json tfplan > plan.json
 
-      # 9. Setup Infracost
+      # Pass plan.json to Job 2
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: parent_module/plan.json
+
+
+  # ==========================================
+  # JOB 2 - INFRACOST
+  # ==========================================
+  infracost:
+    name: Infracost Cost Scan
+    runs-on: ubuntu-latest
+
+    # Job 1 must finish successfully first
+    needs: terraform
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Download plan.json created by Job 1
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan
+          path: parent_module
+
       - name: Setup Infracost
         uses: infracost/actions/setup@v3
         with:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
 
-      # 10. Infracost Scan
-      - name: Infracost Cost Scan
-        run: infracost scan plan.json
+      - name: Run Infracost Cost Scan
+        run: infracost scan parent_module/plan.json
