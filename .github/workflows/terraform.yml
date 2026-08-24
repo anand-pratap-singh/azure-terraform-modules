@@ -59,3 +59,16 @@ jobs:
       # 7. Terraform Plan
       - name: Terraform Plan
         run: terraform plan -var-file="terraform.tfvars"
+        
+      # 8. Setup Infracost
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      # 9. Run Infracost Cost Scan new
+      - name: Infracost Cost Estimate
+        run: |
+          infracost breakdown \
+            --path=. \
+            --terraform-var-file=terraform.tfvars
