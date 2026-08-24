@@ -96,5 +96,7 @@ jobs:
         with:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
 
-      - name: Run Infracost Cost Scan
-        run: infracost scan parent_module/plan.json
+      - name: Run Infracost Cost Estimate
+        run: |
+         infracost breakdown \
+          --path=parent_module/plan.json
